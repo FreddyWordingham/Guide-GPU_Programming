@@ -45,7 +45,7 @@ poetry install
 ## Test it
 
 ```shell
-poetry run python -c "import mandybrot_gpu && print('Hello, World!')"
+poetry run python -c "import mandybrot_gpu; print('Hello, World!')"
 ```
 
 ## Return
