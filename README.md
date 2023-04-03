@@ -9,3 +9,4 @@ How to program a graphics card using Python.
 ## Chapters
 
 -   [0 Setup](./chapters/0-Setup/README.md)
+-   [1 Library](./chapters/1-Library/README.md)
