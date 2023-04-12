@@ -7,69 +7,69 @@ def area_gpu(real, imag, width, height, scale, max_iters):
     Sample a region of the Mandelbrot set.
     """
 
-    # start_real = real - (0.5 * scale)
-    # start_imag = imag - (0.5 * scale * height / width)
-    # delta = scale / (width - 1)
+    # Setup OpenCL
+    platform = cl.get_platforms()[0]
+    device = platform.get_devices()[0]
+    ctx = cl.Context([device])
+    queue = cl.CommandQueue(ctx)
 
-    # platform = cl.get_platforms()[0]
-    # device = platform.get_devices()[0]
-    # ctx = cl.Context([device])
-    # queue = cl.CommandQueue(ctx)
+    # Compile kernel
+    kernel = cl.Program(
+        ctx,
+        """
+        __kernel void mandelbrot(__global float* buffer, float start_real, float start_imag, uint width, float delta_real, float delta_imag, uint max_iters) {
+            int i = get_global_id(0);
+            int j = get_global_id(1);
 
-    # mf = cl.mem_flags
+            //float x0 = start_real + ((float)i * delta_real);
+            //float y0 = start_imag + ((float)j * delta_imag);
 
-    # kernel = cl.Program(
-    #     ctx,
-    #     """
-    #     __kernel void mandelbrot(__global float* buffer, float start_real, float start_imag, uint width, float delta, uint max_iters) {
-    #         int i = get_global_id(0);
-    #         int j = get_global_id(1);
+            //float x = 0.0;
+            //float y = 0.0;
+            //float x2 = 0.0;
+            //float y2 = 0.0;
+            //uint iteration = 0;
 
-    #         float x0 = start_real + ((float)i * delta);
-    #         float y0 = start_imag + ((float)j * delta);
+            //while (((x2 + y2) <= 4.0) && (iteration < max_iters)) {{
+            //    y = (x + x) * y + y0;
+            //    x = x2 - y2 + x0;
+            //    x2 = x * x;
+            //    y2 = y * y;
+            //    iteration = iteration + 1;
+            //}}
 
-    #         float x = 0.0;
-    #         float y = 0.0;
-    #         float x2 = 0.0;
-    #         float y2 = 0.0;
-    #         uint iteration = 0;
+            //buffer[i + (j * width)] = (float)(iteration);
+            buffer[i + (j * width)] = i;
+        }
+        """,
+    ).build()
 
-    #         while (((x2 + y2) <= 4.0) && (iteration < max_iters)) {{
-    #             y = (x + x) * y + y0;
-    #             x = x2 - y2 + x0;
-    #             x2 = x * x;
-    #             y2 = y * y;
-    #             iteration = iteration + 1;
-    #         }}
-
-    #         //buffer[i + (j * width)] = (float)(iteration);
-    #         buffer[(i * width) + (j)] = i;
-    #     }
-    #     """,
-    # ).build()
-
+    # Copy data to GPU
     cpu_buffer = np.zeros((width, height)).astype(np.float32)
-    # gpu_buffer = cl.Buffer(ctx, mf.WRITE_ONLY, cpu_buffer.nbytes)
-    # knl = kernel.mandelbrot
+    gpu_buffer = cl.Buffer(ctx, cl.mem_flags.WRITE_ONLY, cpu_buffer.nbytes)
 
-    # print("start_real: ", start_real)
-    # print("start_imag: ", start_imag)
-    # print("delta     : ", delta)
+    # Run kernel
+    aspect_ratio = width / height
+    delta_real = scale / max((width - 1), 1)
+    delta_imag = scale / (max((height - 1), 1) * aspect_ratio)
+    start_real = real - (0.5 * scale)
+    start_imag = imag - (0.5 * scale / aspect_ratio)
 
-    # delta = scale / (width - 1)
-    # knl(
-    #     queue,
-    #     cpu_buffer.shape,
-    #     None,
-    #     gpu_buffer,
-    #     np.float32(start_real),
-    #     np.float32(start_imag),
-    #     np.uint32(width),
-    #     np.float32(delta),
-    #     np.uint32(max_iters),
-    # )
+    kernel.mandelbrot(
+        queue,
+        cpu_buffer.shape,
+        None,
+        gpu_buffer,
+        np.float32(start_real),
+        np.float32(start_imag),
+        np.uint32(width),
+        np.float32(delta_real),
+        np.float32(delta_imag),
+        np.uint32(max_iters),
+    )
 
-    # cl.enqueue_copy(queue, cpu_buffer, gpu_buffer)
+    # Copy data back to CPU
+    cl.enqueue_copy(queue, cpu_buffer, gpu_buffer)
 
     return cpu_buffer
 
