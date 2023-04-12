@@ -8,6 +8,9 @@ packages = [{include = "mandybrot_gpu"}]
 
 [tool.poetry.dependencies]
 python = "^3.8"
+pillow = "^9.5.0"
+numpy = "^1.24.2"
+pyopencl = "^2022.3.1"
 
 
 [build-system]

@@ -1,2 +1,1 @@
-from .sample import *
-from .sample import *
+from . import sample
