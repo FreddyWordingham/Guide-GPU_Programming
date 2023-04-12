@@ -20,7 +20,7 @@ if not os.path.exists(OUTPUT_DIR):
     os.makedirs(OUTPUT_DIR)
 
 # Sample the region
-data = mandy.sample.area_gpu(
+data = mandy.sample.area(
     args.real, args.imag, args.width, args.height, args.scale, args.max_iters
 )
 
@@ -31,9 +31,9 @@ def display(data):
     """
     shape = data.shape
     buffer = ""
-    for im in reversed(range(shape[1])):
-        for re in range(shape[0]):
-            buffer += f"{data[re, im]:.0f}   "
+    for im in reversed(range(shape[0])):
+        for re in range(shape[1]):
+            buffer += f"{data[im, re]:4.0f}   "
         buffer += "\n"
     print(buffer)
 
